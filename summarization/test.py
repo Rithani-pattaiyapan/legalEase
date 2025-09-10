@@ -13,7 +13,8 @@ from google.genai import types
 # Step 0: Load environment variables
 # -------------------------------
 load_dotenv()
-KANON_API_KEY = os.getenv("KANOON_API_KEY")
+
+KANOON_API_KEY = os.getenv("KANOON_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # -------------------------------
@@ -21,7 +22,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # -------------------------------
 # India Kanoon client
 class Args:
-    token = KANON_API_KEY
+    token = KANOON_API_KEY
     maxcites = 0
     maxcitedby = 0
     orig = False
@@ -88,22 +89,39 @@ chunks = chunk_text(case_text)
 summaries = []
 
 # -------------------------------
-# Step 5: Summarize each chunk with Gemini
+# Step 5: Role-based Summarization
 # -------------------------------
+def get_prompt(role: str, chunk: str) -> str:
+    if role == "public":
+        return f"Explain the following legal text in **simple terms** so a general person can understand:\n\n{chunk}"
+    elif role == "student":
+        return f"Summarize the following legal text like a **law student’s notes**. Include constitutional provisions, case laws (if any), and legal doctrines:\n\n{chunk}"
+    elif role == "lawyer":
+        return f"Summarize the following legal text as a **professional case brief for a lawyer**. Use structured sections: Facts, Issues, Arguments, Court Reasoning, Judgment, and Key Takeaways:\n\n{chunk}"
+    else:
+        # fallback: general summary
+        return f"Summarize this legal text concisely:\n\n{chunk}"
+
+
+role = input("Enter role (public / student / lawyer): ").strip().lower()
+
+summaries = []
+
 for i, chunk in enumerate(chunks):
-    print(f"\n🔹 Summarizing chunk {i+1}/{len(chunks)}...")
-    
+    print(f"\n🔹 Summarizing chunk {i+1}/{len(chunks)} as {role}...")
+
     response = gemini_client.models.generate_content(
         model="gemini-2.5-flash",
         contents=[
             types.Part.from_text(
-                text=f"Summarize the following legal text concisely for a general audience:\n\n{chunk}"
+                text=get_prompt(role, chunk)
             )
         ]
     )
-    
+
     chunk_summary = response.text.strip() if response.text else "No summary returned"
     summaries.append(chunk_summary)
+
 
 # -------------------------------
 # Step 6: Combine and print final summary
