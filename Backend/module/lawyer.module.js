@@ -1,5 +1,4 @@
 import mongoose , {Schema} from 'mongoose';
-import { use } from 'react';
 
 const lawyerSchema = new Schema({
     user_id: {
@@ -9,7 +8,6 @@ const lawyerSchema = new Schema({
     },
     specialization: {
         type: String,
-        enum: ['criminal', 'civil', 'family', 'corporate', 'property', 'labor', 'tax', 'intellectual_property', 'environmental', 'human_rights', 'others'],
         required: true,
     },
     experience_years: {
